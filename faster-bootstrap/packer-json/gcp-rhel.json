@@ -1,16 +1,13 @@
 {
     "variables": {
-        "region": "",
+        "account_file": "",
         "parcel_url": "",
         "cm_repository_url": "",
         "jdk_repository_url": "",
-        "ami": "",
-        "vpc_id": "",
-        "subnet_id": "",
-        "security_group_id": "",
-        "ami_prefix": "",
-        "ami_virtualization_type": "",
-        "root_device_name": "",
+        "source_image": "",
+        "image_prefix": "",
+        "zone": "",
+        "project_id": "",
         "ssh_username": "",
         "associate_public_ip_address": "false",
         "java_version": "",
@@ -18,25 +15,16 @@
     },
     "builders": [
     {
-        "type": "amazon-ebs",
-        "region": "{{user `region`}}",
-        "source_ami": "{{user `ami`}}",
-        "instance_type": "m4.xlarge",
+        "type": "googlecompute",
+        "account_file": "{{user `account_file`}}",
+        "project_id": "{{user `project_id`}}",
+        "source_image": "{{user `source_image`}}",
+        "image_name": "{{user `image_prefix`}}-{{timestamp}}",
+        "disk_size": "30",
+        "zone": "{{user `zone`}}",
         "ssh_username": "{{user `ssh_username`}}",
-        "ami_name": "{{user `ami_prefix`}} {{timestamp}}",
-        "ami_virtualization_type": "{{user `ami_virtualization_type`}}",
         "ssh_timeout": "10m",
-        "launch_block_device_mappings": [{
-            "device_name": "{{user `root_device_name`}}",
-            "volume_size": 30,
-            "delete_on_termination": true
-        }],
-        "vpc_id": "{{user `vpc_id`}}",
-        "subnet_id": "{{user `subnet_id`}}",
-        "security_group_id": "{{user `security_group_id`}}",
-        "ssh_pty": "true",
-        "ssh_private_ip": "false",
-        "associate_public_ip_address": "{{user `associate_public_ip_address`}}"
+        "ssh_pty": "true"
     }],
     "provisioners": [
     {

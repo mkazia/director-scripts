@@ -1,42 +1,40 @@
 {
     "variables": {
-        "region": "",
+        "client_id": "",
+        "client_secret": "",
+        "tenant_id": "",
+        "subscription_id": "",
+        "managed_image_resource_group": "",
         "parcel_url": "",
         "cm_repository_url": "",
         "jdk_repository_url": "",
-        "ami": "",
-        "vpc_id": "",
-        "subnet_id": "",
-        "security_group_id": "",
-        "ami_prefix": "",
-        "ami_virtualization_type": "",
-        "root_device_name": "",
+        "source_image": "",
+        "image_prefix": "",
+        "location": "",
         "ssh_username": "",
         "associate_public_ip_address": "false",
         "java_version": "",
-        "preextract_parcel": "false"
+        "preextract_parcel": "true"
     },
     "builders": [
     {
-        "type": "amazon-ebs",
-        "region": "{{user `region`}}",
-        "source_ami": "{{user `ami`}}",
-        "instance_type": "m4.xlarge",
+        "type": "azure-arm",
+        "client_id": "{{user `client_id`}}",
+        "client_secret": "{{user `client_secret`}}",
+        "tenant_id": "{{user `tenant_id`}}",
+        "subscription_id": "{{user `subscription_id`}}",
+        "managed_image_name": "{{user `image_prefix`}}",
+        "managed_image_resource_group_name": "{{user `managed_image_resource_group`}}",
+        "vm_size": "Standard_DS2_v2",
+        "location": "{{user `location`}}",
+        "os_type": "Linux",
+        "image_publisher": "OpenLogic",
+        "image_offer": "CentOS",
+        "image_sku": "7.4",
+        "image_version": "latest",
         "ssh_username": "{{user `ssh_username`}}",
-        "ami_name": "{{user `ami_prefix`}} {{timestamp}}",
-        "ami_virtualization_type": "{{user `ami_virtualization_type`}}",
         "ssh_timeout": "10m",
-        "launch_block_device_mappings": [{
-            "device_name": "{{user `root_device_name`}}",
-            "volume_size": 30,
-            "delete_on_termination": true
-        }],
-        "vpc_id": "{{user `vpc_id`}}",
-        "subnet_id": "{{user `subnet_id`}}",
-        "security_group_id": "{{user `security_group_id`}}",
-        "ssh_pty": "true",
-        "ssh_private_ip": "false",
-        "associate_public_ip_address": "{{user `associate_public_ip_address`}}"
+        "ssh_pty": "true"
     }],
     "provisioners": [
     {
@@ -97,5 +95,14 @@
                              "JAVA_VERSION={{user `java_version`}}",
                              "JDK_REPOSITORY_URL={{user `jdk_repository_url`}}",
                              "PREEXTRACT_PARCEL={{user `preextract_parcel`}}"]
+    },
+    {
+    "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
+    "inline": [
+      "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
+    ],
+    "inline_shebang": "/bin/sh -x",
+    "type": "shell",
+    "skip_clean": true
     }]
 }

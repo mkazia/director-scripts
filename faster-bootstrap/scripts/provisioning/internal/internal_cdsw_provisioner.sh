@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# (c) Copyright 2015 Cloudera, Inc.
+# (c) Copyright 2017 Cloudera, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,35 +18,40 @@
 # e.g. http://archive-primary.cloudera.com/cdh5/parcels/5.7.0/CDH-5.7.0-1.cdh5.7.0.p0.45-el7.parcel
 
 # You can do this one of two ways:
-# 1. Set a PARCEL_URL environment variable.
-# 2. Supply an argument that is a PARCEL_URL.
+# 1. Set a CDSW_PARCEL_URL environment variable.
+# 2. Supply an argument that is a CDSW_PARCEL_URL.
 
 # This script will have to be re-run for each parcel you want to cache on the
 # image that you are building.
 
-if [ -z "${PARCEL_URL+set}" ]
+if [ -z "${CDSW_PARCEL_URL+set}" ]
 then
   if [ "$#" -ne 1 ]
   then
     echo "Usage: $0 <parcel-url>"
     echo ""
-    echo "Alternatively, set the environment variable PARCEL_URL prior to"
+    echo "Alternatively, set the environment variable CDSW_PARCEL_URL prior to"
     echo "running this script."
-    exit 1
+    echo "Silently exiting without setting up Spark2 parcel"
+    exit 0
   else
-    PARCEL_URL=$1
+    CDSW_PARCEL_URL=$1
   fi
 fi
 
 sudo useradd -r cloudera-scm
-sudo mkdir -p /opt/cloudera/parcels /opt/cloudera/parcel-repo /opt/cloudera/parcel-cache
+sudo mkdir -p /opt/cloudera/parcels /opt/cloudera/parcel-repo /opt/cloudera/parcel-cache /opt/cloudera/csd
 
-PARCEL_NAME="${PARCEL_URL##*/}"
+PARCEL_NAME="${CDSW_PARCEL_URL##*/}"
 PARCEL_DIR="${PARCEL_NAME%-*}"
+CSD_NAME="${CDSW_CSD_URL##*/}"
 
-echo "Downloading parcel from $PARCEL_URL"
-sudo curl -s -S "${PARCEL_URL}" -o "/opt/cloudera/parcel-repo/$PARCEL_NAME"
-sudo curl -s -S "${PARCEL_URL}.sha1" -o "/opt/cloudera/parcel-repo/$PARCEL_NAME.sha1"
+echo "Downloading CSD from $CDSW_CSD_URL"
+sudo -E /usr/bin/curl -s -S "${CDSW_CSD_URL}" -o "/opt/cloudera/csd/$CSD_NAME"
+
+echo "Downloading parcel from $CDSW_PARCEL_URL"
+sudo -E /usr/bin/curl -s -S "${CDSW_PARCEL_URL}" -o "/opt/cloudera/parcel-repo/$PARCEL_NAME"
+sudo -E /usr/bin/curl -s -S "${CDSW_PARCEL_URL}.sha1" -o "/opt/cloudera/parcel-repo/$PARCEL_NAME.sha1"
 sudo cp "/opt/cloudera/parcel-repo/$PARCEL_NAME.sha1" "/opt/cloudera/parcel-repo/$PARCEL_NAME.sha"
 
 echo "Verifying parcel checksum"
@@ -58,10 +63,6 @@ if ! eval "cd /opt/cloudera/parcel-repo && sha1sum -c \"$PARCEL_NAME.shacheck\""
 fi
 sudo rm "/opt/cloudera/parcel-repo/$PARCEL_NAME.shacheck"
 
-#for parcel_path in /opt/cloudera/parcel-repo/*.parcel
-#do
-#    sudo ln "$parcel_path" "/opt/cloudera/parcel-cache/$(basename "$parcel_path")"
-#done
 sudo ln /opt/cloudera/parcel-repo/$PARCEL_NAME /opt/cloudera/parcel-cache/$PARCEL_NAME
 sudo chown -R cloudera-scm:cloudera-scm /opt/cloudera
 
@@ -69,8 +70,8 @@ if [ "$PREEXTRACT_PARCEL" = true ]
 then
   echo "Preextracting parcels..."
   sudo tar zxf "/opt/cloudera/parcel-repo/$PARCEL_NAME" -C "/opt/cloudera/parcels"
-  sudo ln -s "${PARCEL_DIR}" /opt/cloudera/parcels/CDH
-  sudo touch /opt/cloudera/parcels/CDH/.dont_delete
+  sudo ln -s $PARCEL_DIR /opt/cloudera/parcels/CDSW
+  sudo touch /opt/cloudera/parcels/CDSW/.dont_delete
   echo "Done"
 fi
 
